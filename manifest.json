@@ -1,0 +1,26 @@
+{
+    "name": "Auto Click Extension",
+    "version": "1.0.0",
+    "description": "Automatically clicks a specified element upon page load.",
+    "manifest_version": 3,
+    "permissions": [
+        "activeTab",
+        "contextMenus",
+        "storage"
+    ],
+    "content_scripts": [
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "content.js"
+            ]
+        }
+    ],
+    "action": {
+        "default_icon": "click-icon.png",
+        "default_popup": "index.html",
+        "default_title": "Auto Click Extension"
+    }
+}
