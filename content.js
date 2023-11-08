@@ -83,7 +83,7 @@ chrome.storage.sync.get(null, function (items) {
         if (openTimeout) clearTimeout(openTimeout);
         openTimeout = setTimeout(() => {
             let element = e?.target
-            if (element?.tagName === "A" && element?.href) {
+            if (element?.tagName === "A" || element?.tagName === "BUTTON") {
                 chosenElementId = undefined
                 let recursedElement = element
                 while (recursedElement instanceof Element) {
