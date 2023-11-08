@@ -41,7 +41,8 @@ chrome.storage.sync.get(null, function (items) {
     let usedUrl = false;
     for (let key in savedUrls) {
         if (usedUrl) break
-        switch (savedUrls[key]) {
+        if (savedUrls[key]?.disabled) continue
+        switch (savedUrls[key]?.type) {
             case "Origin": {
                 if (key === document.location.origin) {
                     usedUrl = key
