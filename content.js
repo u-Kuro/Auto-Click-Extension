@@ -184,9 +184,6 @@ chrome.storage.sync.get(null, function (items) {
                                 if (!savedItems[usedUrl]) {
                                     savedItems[usedUrl] = {}
                                 }
-                                if (includeText) {
-
-                                }
                                 savedItems[usedUrl][elementUniqueId] = {
                                     elementKey: chosenElementId,
                                     delay: Math.min(2147483647, delay),
@@ -199,9 +196,12 @@ chrome.storage.sync.get(null, function (items) {
                         async function handleDelete() {
                             if (savedItems[usedUrl].hasOwnProperty(elementUniqueId)) {
                                 delete savedItems[usedUrl][elementUniqueId]
+                                if (!jsonIsEmpty(savedItems[usedUrl])) {
+                                    await saveData(usedUrl, savedItems[usedUrl])
+                                }
                             }
                             if (jsonIsEmpty(savedItems[usedUrl])) {
-                                await deleteData(elementUniqueId)
+                                await deleteData(usedUrl)
                             }
                             handleCancel()
                         }
