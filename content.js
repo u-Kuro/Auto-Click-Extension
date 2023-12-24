@@ -73,18 +73,30 @@ chrome.storage.sync.get(null, function (items) {
     if (!usedUrl) return
     usedUrl = usedUrl + savedItemsID
     for (let key in savedItems[usedUrl]) {
-        setTimeout(() => {
-            window.parent.document?.querySelector(key)?.click?.()
-        }, Math.min(2147483647, savedItems[usedUrl][key]))
+        let elementKey = savedItems?.[usedUrl]?.[key]?.elementKey
+        if (elementKey) {
+            setTimeout(() => {
+                let innerText = savedItems?.[usedUrl]?.[key]?.innerText
+                if (typeof innerText === "string") {
+                    let elements = Array.from(window?.parent?.document?.querySelectorAll?.(elementKey) || [])
+                    let element = elements?.find?.((el) => el?.innerText === innerText)
+                    element?.click?.()
+                } else {
+                    window?.parent?.document?.querySelector?.(elementKey)?.click?.()
+                }
+            }, Math.min(2147483647, savedItems?.[usedUrl]?.[key]?.delay || 0))
+        }
     }
 
-    let chosenElementId, openTimeout;
+    let elementUniqueId, chosenElementId, chosenElementInnerText = "", openTimeout;
     document.addEventListener("pointerdown", (e) => {
         if (openTimeout) clearTimeout(openTimeout);
         openTimeout = setTimeout(() => {
             let element = e?.target
             if (element?.tagName === "A" || element?.tagName === "BUTTON") {
+                elementUniqueId = undefined
                 chosenElementId = undefined
+                chosenElementInnerText = element?.innerText || ""
                 let recursedElement = element
                 while (recursedElement instanceof Element) {
                     let classList = Array.from(recursedElement?.classList || [])
@@ -124,6 +136,7 @@ chrome.storage.sync.get(null, function (items) {
                 }
                 if (chosenElementId) {
                     chosenElementId = chosenElementId
+                    elementUniqueId = chosenElementId + chosenElementInnerText
                 }
                 init()
             }
@@ -142,9 +155,13 @@ chrome.storage.sync.get(null, function (items) {
                 for (let addedNode of mutation.addedNodes) {
                     if (addedNode.id === "auto-click-WuPtWCqvGTRZltvdSIN70") {
                         let inputDelayEl = addedNode.querySelector("#delayInput")
-                        if (savedItems?.[usedUrl]?.hasOwnProperty?.(chosenElementId)) {
+                        let includeTextEl = addedNode.querySelector("#includeText")
+                        if (savedItems?.[usedUrl]?.hasOwnProperty?.(elementUniqueId)) {
                             if (inputDelayEl instanceof Element && inputDelayEl?.tagName === "INPUT") {
-                                inputDelayEl.value = parseFloat(savedItems[usedUrl][chosenElementId])
+                                inputDelayEl.value = parseFloat(savedItems[usedUrl][elementUniqueId]?.delay) || 0
+                            }
+                            if (includeTextEl instanceof Element && includeTextEl?.tagName === "INPUT") {
+                                includeTextEl.checked = typeof (savedItems[usedUrl][elementUniqueId]?.innerText) === "string"
                             }
                         }
                         addedNode.querySelector(".confirm")?.addEventListener?.("click", (e) => {
@@ -162,21 +179,29 @@ chrome.storage.sync.get(null, function (items) {
                         addedNode.querySelector(".confirm-button-container > .confirm-btn")?.addEventListener?.("click", handleConfirm)
                         async function handleConfirm() {
                             let delay = inputDelayEl?.value ? parseFloat(inputDelayEl?.value) : 0
-                            if (usedUrl && chosenElementId && typeof delay === "number" && delay >= 0 && !isNaN(delay)) {
+                            let includeText = includeTextEl?.checked
+                            if (usedUrl && elementUniqueId && chosenElementId && typeof delay === "number" && delay >= 0 && !isNaN(delay)) {
                                 if (!savedItems[usedUrl]) {
                                     savedItems[usedUrl] = {}
                                 }
-                                savedItems[usedUrl][chosenElementId] = Math.min(2147483647, delay)
+                                if (includeText) {
+
+                                }
+                                savedItems[usedUrl][elementUniqueId] = {
+                                    elementKey: chosenElementId,
+                                    delay: Math.min(2147483647, delay),
+                                    innerText: includeText ? chosenElementInnerText : false
+                                }
                                 await saveData(usedUrl, savedItems[usedUrl])
                             }
                             handleCancel()
                         }
                         async function handleDelete() {
-                            if (savedItems[usedUrl].hasOwnProperty(chosenElementId)) {
-                                delete savedItems[usedUrl][chosenElementId]
+                            if (savedItems[usedUrl].hasOwnProperty(elementUniqueId)) {
+                                delete savedItems[usedUrl][elementUniqueId]
                             }
                             if (jsonIsEmpty(savedItems[usedUrl])) {
-                                await deleteData(chosenElementId)
+                                await deleteData(elementUniqueId)
                             }
                             handleCancel()
                         }
@@ -352,6 +377,12 @@ chrome.storage.sync.get(null, function (items) {
                     scrollbar-width: none;
                 }
 
+                #auto-click-WuPtWCqvGTRZltvdSIN70 .confirm-checkbox {
+                    display: flex;
+                    align-items: center;
+                    gap: 1ch;
+                }
+
                 #auto-click-WuPtWCqvGTRZltvdSIN70 .confirm-input::-webkit-scrollbar {
                     display: none;
                 }
@@ -420,6 +451,7 @@ chrome.storage.sync.get(null, function (items) {
                             <div class="confirm-info-container">
                                 <h2 class="confirm-title">Auto Click?</h2>
                                 <input id="delayInput" type="text" placeholder="add some delay (ms)" class="confirm-input">
+                                <label class="confirm-checkbox"><input id="includeText" type="checkbox" checked>Include Text</label>
                             </div> 
                             <div class="confirm-button-container">
                                 <button class="cancel-btn button">CANCEL</button>
